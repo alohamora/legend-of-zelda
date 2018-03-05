@@ -63,6 +63,7 @@ void tick_input(GLFWwindow *window) {
     int right = glfwGetKey(window, GLFW_KEY_RIGHT);
     int up = glfwGetKey(window, GLFW_KEY_UP);
     int down = glfwGetKey(window, GLFW_KEY_DOWN);
+    int space = glfwGetKey(window, GLFW_KEY_SPACE);
     if (left) {
         boat.rotation += 2;
     }
@@ -75,8 +76,19 @@ void tick_input(GLFWwindow *window) {
     else if(down) {
         boat.speed = -0.3;
     }
+    else if (space && boat.position.y <= 1.02) {
+        boat.speed_up = 0.5;
+        boat.acc_y = -0.009;
+        boat.flag_jump = 1;
+    }
     else{
         boat.speed  = 0;
+    }
+    if(boat.flag_jump==0){
+        boat.position.y = ocean.position.y + 0.02;
+        boat.current = ocean.current;
+        boat.acc_y = 0;
+        boat.speed_up = 0;
     }
 }
 

@@ -6,6 +6,8 @@ Boat::Boat(float x, float y, color_t color) {
     this->rotation = 0;
     speed = 0;
     current = 0.02;
+    speed_up = 0;
+    flag_jump = 0;
     // Our vertices. Three consecutive floats give a 3D vertex; Three consecutive vertices give a triangle.
     // A cube has 6 faces with 2 triangles each, so this makes 6*2=12 triangles, and 12*3 vertices
     static const GLfloat base[] = {
@@ -155,14 +157,18 @@ void Boat::set_position(float x, float y) {
 void Boat::tick() {
     this->position.x += speed*sin((rotation*M_PI)/180.0);
     this->position.z += speed*cos((rotation*M_PI)/180.0);
-    this->position.y += current;
-    if(this->position.y >= 1.0){
+    this->position.y += current + speed_up;
+    speed_up += acc_y;
+    if(this->position.y >= 1.0 && flag_jump == 0){
         position.y = 1.0;
         current = -current;
     }
     else if(this->position.y <= 0.0){
         position.y = 0.0;
         current = -current;
+        acc_y = 0;
+        speed_up = 0;
+        flag_jump = 0;
     } 
 }
 

@@ -15,6 +15,9 @@ public:
     void tick();
     float speed;
     float current;
+    float acc_y;
+    int flag_jump;
+    float speed_up;
 private:
     VAO *base;
     VAO *sides;
