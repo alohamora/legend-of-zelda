@@ -1,8 +1,8 @@
 #include "boat.h"
 #include "main.h"
 
-Boat::Boat(float x, float y, color_t color) {
-    this->position = glm::vec3(x, y, 0);
+Boat::Boat(float x, float z, color_t color) {
+    this->position = glm::vec3(x, 0, z);
     this->rotation = 0;
     speed = 0;
     current = 0.02;

@@ -3,6 +3,7 @@
 #include "boat.h"
 #include"background.h"
 #include"ocean.h"
+#include"rock.h"
 using namespace std;
 
 GLMatrices Matrices;
@@ -16,9 +17,10 @@ GLFWwindow *window;
 Boat boat;
 Background background;
 Ocean ocean;
+Rock rocks[100];
 float screen_zoom = 1, screen_center_x = 0, screen_center_y = 0;
 float camera_rotation_angle = 0;
-
+int v_count;
 Timer t60(1.0 / 60);
 
 /* Render the scene with openGL */
@@ -33,11 +35,29 @@ void draw() {
 
     // Eye - Location of camera. Don't change unless you are sure!!
     // glm::vec3 eye ( 30*sin(camera_rotation_angle*M_PI/180.0f), 10, 30*cos(camera_rotation_angle*M_PI/180.0f) );
-    glm::vec3 eye (-10, 20, 4);
-    // Target - Where is the camera looking at.  Don't change unless you are sure!!
-    glm::vec3 target (0, 0, 100);
-    // Up - Up vector defines tilt of camera.  Don't change unless you are sure!!
-    glm::vec3 up (0, 1, 0);
+    glm::vec3 eye,target,up;
+    if(v_count == 0){
+        eye  = glm::vec3(boat.position.x, 4+boat.position.y, boat.position.z);
+        target = glm::vec3(boat.position.x + 10*sin((boat.rotation*M_PI)/180.0),4+boat.position.y,boat.position.z + 10*cos((boat.rotation*M_PI)/180.0));
+        up = glm::vec3(0, 1, 0);
+    }
+    else if(v_count == 1){
+        eye  = glm::vec3(boat.position.x - 20*sin((boat.rotation*M_PI)/180.0), 6, boat.position.z - 20*cos((boat.rotation*M_PI)/180.0));
+        target = glm::vec3(boat.position.x ,6,boat.position.z);
+        up = glm::vec3(0, 1, 0);        
+    }
+    else if(v_count == 2){
+        eye = glm::vec3(boat.position.x, 100, boat.position.z);
+        target = glm::vec3(boat.position.x, 0, boat.position.z);
+        up = glm::vec3(0,0,1);
+    }
+    else{
+        eye = glm::vec3(10, 50, 0);
+        // Target - Where is the camera looking at.  Don't change unless you are sure!!
+        target = glm::vec3(boat.position.x, 0, boat.position.z);
+        // Up - Up vector defines tilt of camera.  Don't change unless you are sure!!
+        up = glm::vec3(0, 1, 0);
+    }
 
     Matrices.view = glm::lookAt( eye, target, up ); // Rotating Camera for 3D
     // Don't change unless you are sure!!
@@ -55,6 +75,7 @@ void draw() {
     ocean.draw(VP);
     // Scene render
     boat.draw(VP);
+    for(int i=0;i<100;i++)  rocks[i].draw(VP);
     // Compute Camera matrix (view)
 }   
 
@@ -64,6 +85,12 @@ void tick_input(GLFWwindow *window) {
     int up = glfwGetKey(window, GLFW_KEY_UP);
     int down = glfwGetKey(window, GLFW_KEY_DOWN);
     int space = glfwGetKey(window, GLFW_KEY_SPACE);
+    int view1 = glfwGetKey(window, GLFW_KEY_1);
+    int view2 = glfwGetKey(window, GLFW_KEY_2);
+    int view3 = glfwGetKey(window, GLFW_KEY_3);
+    int view4 = glfwGetKey(window, GLFW_KEY_4);
+    int view5 = glfwGetKey(window, GLFW_KEY_5);
+    
     if (left) {
         boat.rotation += 2;
     }
@@ -76,20 +103,39 @@ void tick_input(GLFWwindow *window) {
     else if(down) {
         boat.speed = -0.3;
     }
-    else if (space && boat.position.y <= 1.02) {
-        boat.speed_up = 0.5;
-        boat.acc_y = -0.009;
-        boat.flag_jump = 1;
-    }
     else{
         boat.speed  = 0;
     }
+        
+    if (space && boat.position.y <= 1.02) {
+        boat.speed_up = 0.5;
+        boat.acc_y = -0.03;
+        boat.flag_jump = 1;
+    }
+    
+    if(view1){
+        v_count = 0;
+    }
+    else if(view2){
+        v_count = 1;
+    }
+    else if(view3){
+        v_count = 2;
+    }
+    else if(view4){
+        v_count = 3;
+    }
+    else if(view5){
+        v_count = 4;
+    }
+
     if(boat.flag_jump==0){
         boat.position.y = ocean.position.y + 0.02;
         boat.current = ocean.current;
         boat.acc_y = 0;
         boat.speed_up = 0;
     }
+
 }
 
 void tick_elements() {
@@ -103,10 +149,15 @@ void tick_elements() {
 void initGL(GLFWwindow *window, int width, int height) {
     /* Objects should be created before any other gl function and shaders */
     // Create the models
-
+    int x,z;
     boat = Boat(0, 0, COLOR_RED);
     background = Background(COLOR_BACKGROUND);
     ocean = Ocean(COLOR_BLUE);
+    for(int i=0;i<100;i++){
+        x = rand()%581 + 20;
+        z = rand()%581 + 20;        
+        rocks[i] = Rock(x,z,COLOR_RED);
+    }
     // Create and compile our GLSL program from the shaders
     programID = LoadShaders("Sample_GL.vert", "Sample_GL.frag");
     // Get a handle for our "MVP" uniform
@@ -133,7 +184,7 @@ int main(int argc, char **argv) {
     srand(time(0));
     int width  = 600;
     int height = 600;
-
+    v_count = 0;
     window = initGLFW(width, height);
 
     initGL (window, width, height);
