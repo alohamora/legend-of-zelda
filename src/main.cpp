@@ -1,7 +1,8 @@
 #include "main.h"
 #include "timer.h"
-#include "ball.h"
-
+#include "boat.h"
+#include"background.h"
+#include"ocean.h"
 using namespace std;
 
 GLMatrices Matrices;
@@ -12,8 +13,9 @@ GLFWwindow *window;
 * Customizable functions *
 **************************/
 
-Ball ball1;
-
+Boat boat;
+Background background;
+Ocean ocean;
 float screen_zoom = 1, screen_center_x = 0, screen_center_y = 0;
 float camera_rotation_angle = 0;
 
@@ -30,13 +32,13 @@ void draw() {
     glUseProgram (programID);
 
     // Eye - Location of camera. Don't change unless you are sure!!
-    glm::vec3 eye ( 5*cos(camera_rotation_angle*M_PI/180.0f), 0, 5*sin(camera_rotation_angle*M_PI/180.0f) );
+    // glm::vec3 eye ( 30*sin(camera_rotation_angle*M_PI/180.0f), 10, 30*cos(camera_rotation_angle*M_PI/180.0f) );
+    glm::vec3 eye (-10, 20, 4);
     // Target - Where is the camera looking at.  Don't change unless you are sure!!
-    glm::vec3 target (0, 0, 0);
+    glm::vec3 target (0, 0, 100);
     // Up - Up vector defines tilt of camera.  Don't change unless you are sure!!
     glm::vec3 up (0, 1, 0);
 
-    // Compute Camera matrix (view)
     Matrices.view = glm::lookAt( eye, target, up ); // Rotating Camera for 3D
     // Don't change unless you are sure!!
     // Matrices.view = glm::lookAt(glm::vec3(0, 0, 3), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0)); // Fixed camera for 2D (ortho) in XY plane
@@ -49,22 +51,39 @@ void draw() {
     // For each model you render, since the MVP will be different (at least the M part)
     // Don't change unless you are sure!!
     glm::mat4 MVP;  // MVP = Projection * View * Model
-
+    background.draw(VP);
+    ocean.draw(VP);
     // Scene render
-    ball1.draw(VP);
-}
+    boat.draw(VP);
+    // Compute Camera matrix (view)
+}   
 
 void tick_input(GLFWwindow *window) {
     int left  = glfwGetKey(window, GLFW_KEY_LEFT);
     int right = glfwGetKey(window, GLFW_KEY_RIGHT);
+    int up = glfwGetKey(window, GLFW_KEY_UP);
+    int down = glfwGetKey(window, GLFW_KEY_DOWN);
     if (left) {
-        // Do something
+        boat.rotation += 2;
+    }
+    else if (right) {
+        boat.rotation -= 2;
+    }
+    else if(up){
+        boat.speed = 0.3;
+    }
+    else if(down) {
+        boat.speed = -0.3;
+    }
+    else{
+        boat.speed  = 0;
     }
 }
 
 void tick_elements() {
-    ball1.tick();
-    camera_rotation_angle += 1;
+    boat.tick();
+    ocean.tick();
+    camera_rotation_angle = 0;
 }
 
 /* Initialize the OpenGL rendering properties */
@@ -73,8 +92,9 @@ void initGL(GLFWwindow *window, int width, int height) {
     /* Objects should be created before any other gl function and shaders */
     // Create the models
 
-    ball1       = Ball(0, 0, COLOR_RED);
-
+    boat = Boat(0, 0, COLOR_RED);
+    background = Background(COLOR_BACKGROUND);
+    ocean = Ocean(COLOR_BLUE);
     // Create and compile our GLSL program from the shaders
     programID = LoadShaders("Sample_GL.vert", "Sample_GL.frag");
     // Get a handle for our "MVP" uniform
@@ -134,9 +154,10 @@ bool detect_collision(bounding_box_t a, bounding_box_t b) {
 }
 
 void reset_screen() {
-    float top    = screen_center_y + 4 / screen_zoom;
-    float bottom = screen_center_y - 4 / screen_zoom;
-    float left   = screen_center_x - 4 / screen_zoom;
-    float right  = screen_center_x + 4 / screen_zoom;
-    Matrices.projection = glm::ortho(left, right, bottom, top, 0.1f, 500.0f);
+    float top    = screen_center_y + 20 / screen_zoom;
+    float bottom = screen_center_y - 20 / screen_zoom;
+    float left   = screen_center_x - 20 / screen_zoom;
+    float right  = screen_center_x + 20 / screen_zoom;
+    Matrices.projection = glm::perspective(1.0f, 1.0f, 1.0f, 500.0f);
+    // Matrices.projection = glm::perspective(1.0f, 1.0f, 0.1f, 500.0f);
 }
