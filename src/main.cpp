@@ -4,6 +4,8 @@
 #include"background.h"
 #include"ocean.h"
 #include"rock.h"
+#include"cannon.h"
+#include"fireball.h"
 using namespace std;
 
 GLMatrices Matrices;
@@ -15,8 +17,10 @@ GLFWwindow *window;
 **************************/
 
 Boat boat;
+Cannon cannon;
 Background background;
 Ocean ocean;
+Fireball fireball;
 Rock rocks[100];
 float screen_zoom = 1, screen_center_x = 0, screen_center_y = 0;
 float camera_rotation_angle = 0;
@@ -73,13 +77,16 @@ void draw() {
     glm::mat4 MVP;  // MVP = Projection * View * Model
     background.draw(VP);
     ocean.draw(VP);
+    fireball.draw(VP);
     // Scene render
-    boat.draw(VP);
     for(int i=0;i<100;i++)  rocks[i].draw(VP);
+    boat.draw(VP);
+    cannon.draw();
     // Compute Camera matrix (view)
 }   
 
 void tick_input(GLFWwindow *window) {
+    int x,y,z;
     int left  = glfwGetKey(window, GLFW_KEY_LEFT);
     int right = glfwGetKey(window, GLFW_KEY_RIGHT);
     int up = glfwGetKey(window, GLFW_KEY_UP);
@@ -90,7 +97,7 @@ void tick_input(GLFWwindow *window) {
     int view3 = glfwGetKey(window, GLFW_KEY_3);
     int view4 = glfwGetKey(window, GLFW_KEY_4);
     int view5 = glfwGetKey(window, GLFW_KEY_5);
-    
+    int f = glfwGetKey(window, GLFW_KEY_F);
     if (left) {
         boat.rotation += 2;
     }
@@ -106,11 +113,19 @@ void tick_input(GLFWwindow *window) {
     else{
         boat.speed  = 0;
     }
-        
-    if (space && boat.position.y <= 1.02) {
+
+    if (space && boat.flag_jump == 0) {
         boat.speed_up = 0.5;
         boat.acc_y = -0.03;
         boat.flag_jump = 1;
+    }
+
+    if(f && fireball.flag == 0){
+        fireball.set_position(boat.position.x + 11*sin((boat.rotation*M_PI)/180.0),4.2,boat.position.z + 11*cos((boat.rotation*M_PI)/180.0));
+        fireball.rotation = boat.rotation;
+        fireball.speed_up = 0.8;
+        fireball.acc_y = -0.03;
+        fireball.flag = 1;
     }
     
     if(view1){
@@ -137,10 +152,26 @@ void tick_input(GLFWwindow *window) {
     }
 
 }
+void detect_collision(int i){
+    float a,b,angle,dis;
+    a = boat.position.x - rocks[i].position.x;
+    b = boat.position.z - rocks[i].position.z;
+    angle = atan(a/b);
+    angle -= boat.rotation;
+    angle = (angle*M_PI)/180.0;
+    dis = sqrt((a*a) + (b*b));
+    if(fabs(dis*cos(angle)) < 7.0  && fabs(dis*sin(angle)) < 3.0){
+        rocks[i].position.y = -10;
+    }
+}
 
 void tick_elements() {
+    for(int i=0;i<100;i++){
+        detect_collision(i);
+    }
     boat.tick();
     ocean.tick();
+    fireball.tick();
     camera_rotation_angle = 0;
 }
 
@@ -151,8 +182,10 @@ void initGL(GLFWwindow *window, int width, int height) {
     // Create the models
     int x,z;
     boat = Boat(0, 0, COLOR_RED);
+    cannon = Cannon(CANNON);
     background = Background(COLOR_BACKGROUND);
     ocean = Ocean(COLOR_BLUE);
+    fireball = Fireball(FIREBALL);
     for(int i=0;i<100;i++){
         x = rand()%581 + 20;
         z = rand()%581 + 20;        
